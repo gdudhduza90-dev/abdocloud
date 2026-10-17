@@ -1,6 +1,10 @@
 import os
 import logging
 import sqlite3
+
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -392,6 +396,25 @@ async def receive_file(
 # تشغيل البوت
 # =========================
 
+class PingHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Abdo Cloud is running")
+
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
+
+    def log_message(self, *args):
+        pass
+
+
+def start_ping_server():
+    port = int(os.environ.get("PORT", "10000"))
+    server = HTTPServer(("0.0.0.0", port), PingHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+
 def main():
     print("TOKEN:", TOKEN)
     print("OWNER_ID:", OWNER_ID)
@@ -435,8 +458,10 @@ def main():
     )
 
     logger.info("Abdo Cloud is starting...")
+    start_ping_server()
     app.run_polling()
 
 
-if __name__ == "main":
+
+if __name__ == "__main__":
     main()
